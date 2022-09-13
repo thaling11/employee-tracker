@@ -97,3 +97,29 @@ viewEmployees = () => {
     employeeStart();
   });
 };
+
+addDepartment = () => {
+  inquirer.prompt([
+    {
+      type: 'input', 
+      name: 'addDepartment',
+      message: "What department do you want to add?",
+      validate: addDepartment => {
+        if (addDepartment) {
+            return true;
+        } else {
+            console.log('No input');
+            return false;
+        }
+      }
+    }
+  ])
+    .then(answer => {
+      const sql = `INSERT INTO department (department_name) VALUES (?)`;
+      db.query(sql, answer.addDepartment, (err, result) => {
+        if (err) throw err;
+        console.log('New department added!')
+        employeeStart();
+    });
+  });
+}
