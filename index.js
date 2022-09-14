@@ -2,6 +2,7 @@
 const mysql = require("mysql2");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
+const { response } = require("express");
 
 //Connection to mysql database
 const db = mysql.createConnection(
@@ -129,11 +130,11 @@ const addRole = () => {
   const deptAry = [];
   db.query("SELECT * FROM department", (err, res) => {
     if (err) throw err;
-    res.forEach(dept => {
+    res.forEach((dept) => {
       let newDept = {
         name: dept.department_name,
-        value: dept.id
-      }
+        value: dept.id,
+      };
       deptAry.push(newDept);
     });
 
@@ -141,38 +142,104 @@ const addRole = () => {
       {
         type: "input",
         name: "title",
-        message: "What is the title of the new role?"
+        message: "What is the title of the new role?",
       },
       {
         type: "input",
         name: "salary",
-        message: "What is the salary of the new role?"
+        message: "What is the salary of the new role?",
       },
       {
         type: "list",
         name: "department",
         choices: deptAry,
-        message: "Which department is this role in?"
-      }
+        message: "Which department is this role in?",
+      },
     ];
 
-    inquirer.prompt(userInput)
-    .then(response => {
-      const query = `INSERT INTO roles (title, salary, department_id) VALUES (?)`;
-      db.query(query, [[response.title, response.salary, response.department]], (err, res) => {
-        if (err) throw err;
-        console.log('Successfully added a new role!');
-        employeeStart();
+    inquirer
+      .prompt(userInput)
+      .then((response) => {
+        const query = `INSERT INTO roles (title, salary, department_id) VALUES (?)`;
+        db.query(
+          query,
+          [[response.title, response.salary, response.department]],
+          (err, res) => {
+            if (err) throw err;
+            console.log("Successfully added a new role!");
+            employeeStart();
+          }
+        );
+      })
+      .catch((err) => {
+        console.error(err);
       });
-    })
-    .catch(err => {
-      console.error(err);
-    });
   });
-}
+};
 
 const addEmployee = () => {
-  db.query('SELECT * FROM employee', (err, res) => {
-    
+  db.query("SELECT * FROM employee", (err, res_emp) => {
+    if (err) throw err;
+    const empManager = [
+      {
+        name: "None",
+        value: 0,
+      },
+    ]; //an employee could have no manager
+    res_emp.forEach(({ first_name, last_name, id }) => {
+      empManager.push({
+        name: first_name + " " + last_name,
+        value: id,
+      });
+    });
+    db.query("SELECT * FROM roles", (err, res_role) => {
+      if (err) throw err;
+      const emplyRoleAry = [];
+      res_role.forEach(({ title, id }) => {
+        emplyRoleAry.push({
+          name: title,
+          value: id,
+        });
+      });
+
+      let userPrompts = [
+        {
+          type: "input",
+          name: "firstName",
+          message: "What is the new employee's first name?",
+        },
+        {
+          type: "input",
+          name: "lastName",
+          message: "What is the new employee's last name?",
+        },
+        {
+          type: "list",
+          name: "role",
+          message: "What is the new employee's role?",
+          choices: emplyRoleAry,
+        },
+        {
+          type: "list",
+          name: "manager",
+          message: "Who is the employee's manager?",
+          choices: empManager,
+        },
+      ]
+
+      inquirer.prompt(userPrompts)
+      .then(response => {
+        const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)`;
+        let manager_id = response.manager_id !== 0? response.manager_id: null;
+        db.query(sql, [[response.first_name, response.last_name, response.role_id, manager_id]], (err, res) => {
+          if (err) throw err;
+          console.log("New employee added!");
+          employeeStart();
+        });
+      })
+      .catch(err => {
+        console.error(err);
+      });
   })
+});
 }
