@@ -63,7 +63,7 @@ function employeeStart() {
           addEmployee();
           break;
 
-        case "Udate employee role":
+        case "Update employee role":
           updateEmployeeRole();
           break;
       }
@@ -242,4 +242,61 @@ const addEmployee = () => {
       });
   })
 });
+}
+
+const updateEmployeeRole = () => {
+  db.query("SELECT * FROM employee", (err, res_emp) => {
+    if (err) throw err;
+    const updatedEmp = [];
+    console.log('hi');
+    res_emp.forEach(({ first_name, last_name, id }) => {
+      updatedEmp.push({
+        name: first_name + " " + last_name,
+        value: id
+      });
+    });
+    
+    //get all the role list to make choice of employee's role
+    db.query("SELECT * FROM roles", (err, res_role) => {
+      if (err) throw err;
+      const updatedRole = [];
+      res_role.forEach(({ title, id }) => {
+        updatedRole.push({
+          name: title,
+          value: id
+          });
+        });
+     
+      let userPrompts = [
+        {
+          type: "list",
+          name: "id",
+          choices: updatedEmp,
+          message: "Which employee role do you want to update?"
+        },
+        {
+          type: "list",
+          name: "role_id",
+          choices: updatedRole,
+          message: "What is the employee's new role?"
+        }
+      ]
+      inquirer.prompt(userPrompts)
+        .then(response => {
+          const sql = `UPDATE EMPLOYEE SET ? WHERE ?? = ?;`;
+          db.query(sql, [
+            {role_id: response.role_id},
+            "id",
+            response.id
+          ], (err, res) => {
+            if (err) throw err;
+            console.log("Updated employee's role!");
+            employeeStart();
+          });
+        })
+        .catch(err => {
+          console.error(err);
+        });
+      })
+  });
 }
