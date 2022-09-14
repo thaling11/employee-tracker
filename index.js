@@ -170,3 +170,9 @@ const addRole = () => {
     });
   });
 }
+
+const addEmployee = () => {
+  db.query('SELECT * FROM employee', (err, res) => {
+    
+  })
+}
